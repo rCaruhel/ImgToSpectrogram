@@ -98,7 +98,7 @@ class SpectrogramGenerator:
         self.outputImage = Image.new('L', (self.newlong, self.newlarg))
         img = self.image.resize((self.newlong, self.newlarg))
 
-        self.outputValues = [[0 for x in range(self.newlong)] for y in range(self.newlarg)]
+        self.outputValues = [[0 for _ in range(self.newlong)] for _ in range(self.newlarg)]
 
         for y in range(self.newlarg):
             for x in range(self.newlong):
@@ -139,6 +139,6 @@ if __name__ == "__main__":
     from PIL import Image
     import sys
 
-    sg = SpectrogramGenerator("smile.jpg")
+    sg = SpectrogramGenerator(str(sys.argv[1]))
     sg.generate_outputImage()
-    sg.generateTone("smile.wav")
+    sg.generateTone(str(sys.argv[2]))
