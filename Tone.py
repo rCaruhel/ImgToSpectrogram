@@ -72,7 +72,6 @@ class BeepGenerator:
         # use the floating point -1.0 to 1.0 data directly in a WAV file but not
         # obvious how to do that using the wave module in python.
         for sample in self.audio:
-            #print("writing ",sample,' in file')
             wav_file.writeframes(struct.pack('h', int(sample * 32767.0)))
 
         wav_file.close()
@@ -81,62 +80,65 @@ class BeepGenerator:
 
 
 
+class SpectrogramGenerator:
+    def __init__(self,image_name):
+        self.imageHeight = 150
+        self.beepDuration = 50
+        self.image = Image.open(image_name)
+        self.outputImage = None
+        self.outputValues = None
+        self.newlong = None
+        self.newlarg = None
+
+    def generate_outputImage(self):
+        long, larg = self.image.size
+        self.newlarg = int(self.imageHeight)
+        self.newlong = int(self.imageHeight * long / larg)
+
+        self.outputImage = Image.new('L', (self.newlong, self.newlarg))
+        img = self.image.resize((self.newlong, self.newlarg))
+
+        self.outputValues = [[0 for x in range(self.newlong)] for y in range(self.newlarg)]
+
+        for y in range(self.newlarg):
+            for x in range(self.newlong):
+                r, v, b = img.getpixel([x, y])
+                self.outputValues[y][x] = ((r + v + b) / 3) / 255
+                self.outputImage.putpixel((x, y), int((r + v + b) / 3))
+
+        return self.outputImage
+
+
+
+    def generateTone(self,filename):
+        bg = BeepGenerator()
+        bg.append_silence(self.beepDuration * self.newlong)
+
+        baseFrequency = 100.0
+
+        print("Generating Tone")
+        for i in range(self.newlarg):
+            temporaryWave = BeepGenerator()
+            for j in range(self.newlong):
+                # we increment the frequency each time for each row of pixels to show as a new row in the spectrogram
+                temporaryWave.append_sinewave(baseFrequency + (self.newlarg - i - 1) ** 2,
+                                              duration_milliseconds=self.beepDuration, volume=self.outputValues[i][j] / 250)
+
+            bg.add_sinewaves(temporaryWave)
+
+        # print(bg.audio)
+
+        print("Generating wav file")
+        bg.save_wav(filename)
+
+
 
 
 if __name__ == "__main__":
 
     from PIL import Image
+    import sys
 
-    imgHeight = 150 #in px
-    beepDuration= 50 #in ms
-
-    img = Image.open('poulet.jpg')
-    long, larg = img.size
-
-
-    #resizes the picture for its height to be 500px
-    newlarg = imgHeight
-    newlong = imgHeight * long / larg
-
-    newlong = int(newlong)
-    newlarg = int(newlarg)
-
-    result = Image.new('L', (int(newlong), int(newlarg)))
-    img = img.resize((newlong, newlarg))
-
-    blackValue = [[0 for x in range(newlong)] for y in range(newlarg)]
-
-    for y in range(newlarg):
-        for x in range(newlong):
-            r, v, b = img.getpixel([x, y])
-            blackValue[y][x] = ((r + v + b) / 3) / 255
-            result.putpixel((x, y), int((r + v + b) / 3))
-
-    # for y in range(newlarg):
-    #  print(blackValue[y][200])
-
-    #result.show()
-    print(result.size)
-
-    #result.show()
-
-    bg = BeepGenerator()
-    bg.append_silence(beepDuration*newlong)
-
-    baseFrequency = 100.0
-
-
-    print("Generating Tone")
-    for i in range(newlarg):
-        temporaryWave = BeepGenerator()
-        for j in range(newlong):
-
-            # we increment the frequency each time for each row of pixels to show as a new row in the spectrogram
-            temporaryWave.append_sinewave(baseFrequency+(newlarg-i-1)**2,duration_milliseconds=beepDuration,volume=blackValue[i][j]/250)
-
-        bg.add_sinewaves(temporaryWave)
-
-    #print(bg.audio)
-
-    print("Generating wav file")
-    bg.save_wav("output.wav")
+    sg = SpectrogramGenerator("smile.jpg")
+    sg.generate_outputImage()
+    sg.generateTone("smile.wav")
