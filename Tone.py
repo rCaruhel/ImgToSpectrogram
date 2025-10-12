@@ -132,7 +132,7 @@ if __name__ == "__main__":
         for j in range(newlong):
 
             # we increment the frequency each time for each row of pixels to show as a new row in the spectrogram
-            temporaryWave.append_sinewave(baseFrequency-i**2,duration_milliseconds=beepDuration,volume=blackValue[i][j]/250)
+            temporaryWave.append_sinewave(baseFrequency+(newlarg-i-1)**2,duration_milliseconds=beepDuration,volume=blackValue[i][j]/250)
 
         bg.add_sinewaves(temporaryWave)
 
